@@ -1,0 +1,317 @@
+$(document).ready(function() {
+	// display message
+	$('.display-message').animate({height: 'show'}, 400).delay(9000).fadeOut(1000);
+
+	// mobile menu
+    $('.menu-mobile').on({
+        click: function() {
+            $('.menu-mobile-container').toggleClass('show');
+        }
+    });
+    $('.menu-mobile-container').on({
+        click: function() {
+            $(this).toggleClass('show');
+        }
+    });
+
+	// Cookie Agreement
+	if( getCookie('cookie-law-msg') === '' ) {
+		$('.cookies-agreement').css('display','flex');
+	}
+	$('#cookies-agreement-accept').click(function() {
+		$('.cookies-agreement').css('display','none');
+		setCookie('cookie-law-msg', 1, 365);
+	});
+
+	// languages
+	/*$('.languages').on({
+		click: function() {
+			$(this).addClass('open');
+		},
+		mouseenter: function() {
+			$(this).addClass('open');
+		},
+		mouseleave: function() {
+			$(this).removeClass('open');
+		}
+	});*/
+
+	// scroll to top
+	$(window).scroll(function() {
+		var height = $(window).scrollTop();
+		if (height > 100 && window.matchMedia("only screen and (max-width: 768px)").matches ) {
+			$(".scroll-to-top").fadeIn();
+		} else {
+			$(".scroll-to-top").fadeOut();
+		}
+	});
+	$(".scroll-to-top").click(function() {
+		$("html, body").animate({ scrollTop: 0 }, "600", 'easeOutQuint');
+		return false;
+	});
+
+    // slick
+	/*$('.carousel').slick({
+		dots: false,
+		//vertical: true,
+		infinite: true,
+		speed: 300,
+		slidesToShow: 5,
+		slidesToScroll: 1,
+		autoplay: true,
+		autoplaySpeed: 8000,
+		responsive: [{
+			breakpoint: 1200,
+			settings: {
+				slidesToShow: 4,
+				slidesToScroll: 1,
+				infinite: true
+			}
+		},{
+			breakpoint: 993,
+			settings: {
+				slidesToShow: 3,
+				slidesToScroll: 1,
+				infinite: true
+			}
+		},{
+			breakpoint: 769,
+			settings: {
+				slidesToShow: 2,
+				slidesToScroll: 1,
+				infinite: true
+			}
+		},{
+			breakpoint: 460,
+			settings: {
+				slidesToShow: 2,
+				slidesToScroll: 1,
+				infinite: true
+			}
+		}]
+	});*/
+
+	// check quantity field
+	$('.int-number').checkNumbers({
+		allowFloat:false
+		//limitMin:true,
+		//min:1
+	});
+
+    // details page images
+    $('.fancybox').fancybox();
+    $('.info-thumbs img, .details-thumbs img').click(function() {
+        $('#main-image').attr('src',$(this).attr('data-src') );
+        $('#main-image').parent().attr('title',$(this).attr('title') );
+        $('#main-image').parent().attr('href',$(this).attr('data-zoom-src') );
+        $('.hidden-images a').attr('rel','ss');
+        $('#ss-'+$(this).attr('data-num')).attr('rel','ss-none');
+    });
+});
+
+// ajax loading
+function ajaxLoading() {
+	$('body').prepend('<div class="ajax-loading"></div>');
+	$('.ajax-loading').fadeIn(300);
+}
+
+// ajax ready
+function ajaxReady() {
+	$('.ajax-loading').fadeOut(300,function(){
+		$(this).remove();
+	});
+}
+
+// start the countdown
+function doCountdown( delay, callback ) {
+	var timer = setTimeout(function() {
+		delay--;
+		if( delay > 0 ) {
+			doCountdown(delay, callback);
+		}
+		else {
+			clearTimeout(timer);
+			callback();
+		}
+	},1000);
+}
+
+// ajax message
+function showAJAXMessage( messageText, cssClass ) {
+	var messageObj = $('.ajax-message');
+	var ajaxMessageVisibility = $(messageObj).css('display');
+	$(messageObj).children(".content").removeClass().addClass('content '+cssClass);
+	if(messageText) {
+		if(ajaxMessageVisibility === 'none') {
+			$(messageObj).children(".content").html(messageText);
+			$(messageObj).stop(true, true).animate({height: 'show'}, 200).delay(5000).fadeOut(500);
+		}
+		else
+			setTimeout(function() {
+				showAJAXMessage(messageText, cssClass);
+			}, 3500);
+	}
+}
+
+// formatting numeral input --------------
+(function( $ ) {
+
+	// format numeric inputs
+	$.fn.checkNumbers = function() {
+		var self = this;
+		var iDummy = document.createElement("input");
+		iDummy.setAttribute("type", "number");
+
+		var options = arguments[0];
+		var defaults = {
+			allowFloat: false,
+			arrowNav  : true,
+			limitMin  : false,
+			limitMax  : false,
+			min       : 0,
+			max       : 100,
+			precision : 2, // future feature
+			html5     : iDummy.type !== "text",
+			calculate : function() {
+			}
+		};
+		iDummy = null;
+
+		this.settings = $.extend(defaults, options);
+
+		this.keyup({settings: this.settings}, function( event ) {
+			// callback
+			event.data.settings.calculate.call(this);
+		});
+
+		this.keydown({settings: this.settings}, function( event ) {
+			//console.log((event.which || event.keyCode));
+			// Floating point limit
+			var difference;
+			var str = $(event.target).val();
+			var val = parseFloat(str);
+			var sel = {start: event.target.selectionStart, end: event.target.selectionEnd};
+
+			// only one decimal point
+			if((event.keyCode === 190 || event.keyCode === 110) && str.indexOf(".") > 0) {
+				event.preventDefault();
+			}
+
+			// Minus sign
+			if(event.keyCode === 189) {
+				if(event.target.selectionStart !== 0) {
+					event.preventDefault();
+				}
+				else {
+					if(event.data.settings.limit) {
+						if(-val < event.data.settings.min)
+							event.preventDefault();
+						else
+							$(event.target).val(-val);
+					}
+					else {
+						$(event.target).val(-val);
+					}
+				}
+			}
+
+			// arrow keys
+			if(event.data.settings.arrowNav) {
+				if((event.keyCode === 38)) {
+					if(isNaN(val)) {
+						$(event.target).val(event.data.settings.min);
+					}
+					else {
+						event.preventDefault();
+						if(val + 1 <= event.data.settings.max && event.data.settings.limitMax === true) {
+							$(event.target).val(val + 1);
+						}
+						else {
+							if(!event.data.settings.limitMax)
+								$(event.target).val(val + 1);
+						}
+					}
+				}
+				if((event.keyCode === 40)) {
+					event.preventDefault();
+					if(val - 1 >= event.data.settings.min && event.data.settings.limitMin === true) {
+						$(event.target).val(val - 1);
+					}
+					else {
+						if(!event.data.settings.limitMin)
+							$(event.target).val(val - 1);
+					}
+				}
+			}
+
+			// Limit number range
+			if(event.data.settings.limitMax) {
+				if((event.keyCode >= 48 && event.keyCode <= 57) || (event.keyCode >= 96 && event.keyCode <= 105)) {
+					if(event.keyCode >= 48 && event.keyCode <= 57)
+						difference = 48;
+					else
+						difference = 96;
+					var newNumber = (event.which || event.keyCode) - difference;
+					val = parseFloat((sel.start > 0 ? str.substring(0, sel.start) : "") + newNumber.toString() + (sel.end === str.length ? "" : str.substring(sel.end)));
+					if(val > event.data.settings.max) {
+						$(this).val(event.data.settings.max);
+						event.preventDefault();
+					}
+				}
+			}
+
+			// Allow: backspace, delete, tab, escape, and enter
+			if(event.keyCode === 46 || event.keyCode === 9 || event.keyCode === 8 || event.keyCode === 27 || event.keyCode === 13 ||
+				// F5
+				event.keyCode === 116 ||
+				// allow decimals
+				( ( event.keyCode === 190 || event.keyCode === 110 ) && event.data.settings.allowFloat  ) ||
+				// Allow: Ctrl+A
+				( event.keyCode === 65 && event.ctrlKey === true ) ||
+				// Allow: home, end, left, right
+				( event.keyCode >= 35 && event.keyCode <= 39 )) {
+				// let it happen, don't do anything
+				return false;
+			}
+			else {
+				// Ensure that it is a number and stop the keypress
+				if(event.shiftKey || ( event.keyCode < 48 || event.keyCode > 57 ) && ( event.keyCode < 96 || event.keyCode > 105 )) {
+					event.preventDefault();
+				}
+			}
+
+		});
+
+		if(this.settings.limitMin === true || this.settings.limitMax === true) {
+			this.blur({settings: this.settings}, function( event ) {
+				var val = $(this).val();
+				if(val === "-") {
+					if(event.data.settings.limitMin) {
+						val = event.data.settings.min;
+					}
+					else {
+						val = 0;
+					}
+				}
+				if(event.data.settings.limitMax && parseInt(val) > event.data.settings.max) {
+					$(this).val(event.data.settings.max);
+				}
+				if(event.data.settings.limitMin && parseInt(val) < event.data.settings.min) {
+					$(this).val(event.data.settings.min);
+				}
+				if(val === "") {
+					$(this).val(event.data.settings.min);
+				}
+				//$(event.target).val(parseFloat(val));
+			});
+		}
+
+		return this
+	};
+
+}(jQuery));
+// formatting numeral input end --------------
+
+// cookie functions
+function setCookie(cname, cvalue, exdays) {var d = new Date();d.setTime(d.getTime() + (exdays*24*60*60*1000));var expires = "expires="+d.toUTCString();document.cookie = cname + "=" + cvalue + "; " + expires + ";path=/";}
+function getCookie(cname) {var name = cname + "=";var ca = document.cookie.split(';');for(var i = 0; i < ca.length; i++) {var c = ca[i];while (c.charAt(0) === ' ') {c = c.substring(1);}if (c.indexOf(name) === 0) {return c.substring(name.length, c.length);}}return "";}

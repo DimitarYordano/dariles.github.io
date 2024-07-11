@@ -1,0 +1,75 @@
+// add marker
+function addMarker(lat, lng, data) {
+	var vectorLayer = new ol.layer.Vector({
+		source: new ol.source.Vector({
+			features: [new ol.Feature({
+				geometry: new ol.geom.Point(ol.proj.transform([parseFloat(lng), parseFloat(lat)], 'EPSG:4326', 'EPSG:3857'))
+			})]
+		}),
+		style: new ol.style.Style({
+			image: new ol.style.Icon({
+				anchor: [22, 32],
+				anchorXUnits: "pixels",
+				anchorYUnits: "pixels",
+				src: siteAbsolutePath+"resources/images/marker.png"
+			})
+		})
+	});
+	addMarkerBubble( vectorLayer.ol_uid, data );
+	map.addLayer(vectorLayer);
+}
+
+// add bubbles to map
+function addMarkerBubble( markerId, content ) {
+	$('#'+map.values_.target).append('' +
+		'<div id="popup-'+markerId+'" class="ol-popup">\n' +
+		'\t\t\t\t<a href="#" class="ol-popup-closer" onclick="closeBubble('+markerId+')" ></a>\n' +
+		'\t\t\t\t<div id="popup-content">'+content+'</div>\n' +
+		'\t\t\t</div>'
+	);
+	container = document.getElementById('popup-'+markerId);
+
+	var overlay = new ol.Overlay({
+		element: container,
+		autoPan: true,
+		autoPanAnimation: {
+			duration: 250
+		}
+	});
+	markersBubbles[markerId] = overlay;
+	map.addOverlay( overlay );
+}
+
+// close bubble
+function closeBubble( id ) {
+	markersBubbles[id].setPosition(undefined);
+	return false;
+}
+
+// center and zoom
+function centerZoom() {
+	var defaultZoomLevel = map.getView().getZoom();
+
+	//Create an empty extent that we will gradually extend
+	var extent = ol.extent.createEmpty();
+	map.getLayers().forEach(function(layer) {
+		//If this is actually a group, we need to create an inner loop to go through its individual layers
+		if(layer instanceof ol.layer.Group) {
+			layer.getLayers().forEach(function(groupLayer) {
+				//If this is a vector layer, add it to our extent
+				if(layer instanceof ol.layer.Vector)
+					ol.extent.extend(extent, groupLayer.getSource().getExtent());
+			});
+		}
+		else if(layer instanceof ol.layer.Vector)
+			ol.extent.extend(extent, layer.getSource().getExtent());
+	});
+
+	//Finally fit the map's view to our combined extent
+	map.getView().fit(extent, map.getSize());
+
+	// if number of layers < 3 set default zoom
+	if( map.getLayers().array_.length < 3 ) {
+		map.getView().setZoom(defaultZoomLevel);
+	}
+}
